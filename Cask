@@ -5,6 +5,7 @@
 
 (depends-on "cl")
 (depends-on "promise")
+(depends-on "async-await")
 (depends-on "nodejs-slave" :git "git@github.com:futpib/emacs-nodejs-slave.git")
 
 (development
