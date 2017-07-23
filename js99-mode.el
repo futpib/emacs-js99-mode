@@ -32,8 +32,10 @@
 (require 'nodejs-slave)
 
 
-(defvar js99-debug-overlays nil)
-(defvar js99-debug-pause-updates nil)
+(defvar js99-debug-overlays nil
+  "Show overlay boundaries.")
+(defvar js99-debug-pause-updates nil
+  "Stop updates.")
 
 
 (defconst js99-ast-subtyping-hash (make-hash-table))
@@ -121,9 +123,9 @@
   '((t :inherit default
        :weight normal)))
 
-;; (js99-define-ast-face 'Type
-;;   '((t :foreground "CornflowerBlue")
-;;     (t :weight normal)))
+(js99-define-ast-face 'Type
+  '((t :foreground "CornflowerBlue")
+    (t :weight normal)))
 
 (js99-define-ast-face 'Identifier
   '((t :inherit default
@@ -168,6 +170,7 @@
 (js99-define-ast-type `FunctionExpression `(Function Expression))
 (js99-define-ast-type `Function `(Node))
 (js99-define-ast-type `Identifier `(Expression Pattern))
+(js99-define-ast-type `JSXIdentifier `(Identifier))
 (js99-define-ast-type `IfStatement `(Statement))
 (js99-define-ast-type `ImportDeclaration `(ModuleDeclaration))
 (js99-define-ast-type `ImportDefaultSpecifier `(ModuleSpecifier))
@@ -201,7 +204,7 @@
 (js99-define-ast-type `SwitchCase `(Node))
 (js99-define-ast-type `SwitchStatement `(Statement))
 (js99-define-ast-type `TaggedTemplateExpression `(Expression))
-(js99-define-ast-type `TemplateElement `(Node))
+(js99-define-ast-type `TemplateElement `(Literal))
 (js99-define-ast-type `TemplateLiteral `(Expression))
 (js99-define-ast-type `ThisExpression `(Expression))
 (js99-define-ast-type `ThrowStatement `(Statement))
@@ -215,7 +218,6 @@
 (js99-define-ast-type `WithStatement `(Statement))
 (js99-define-ast-type `YieldExpression `(Expression))
 
-;; custom stuff
 (js99-define-ast-type `Unparsed `(Node))
 (js99-define-ast-type `SyntaxError `(Node))
 
@@ -294,15 +296,18 @@
   "Create overlays based on AST in the BUFFER."
   (cl-labels ((highlight
                (node depth parent-overlay)
-               (let* ((type (alist-get 'type node))
-                      (zero (point-min))
-                      (start (+ zero (alist-get 'start node)))
-                      (end (+ zero (alist-get 'end node))))
-                 (let ((type (if (stringp type) (intern type) type)))
-                   (when (and type start end)
-                     (setq
-                      parent-overlay
-                      (js99-make-overlay type depth parent-overlay start end buffer)))))
+               (let ((type (alist-get 'type node))
+                     (start-raw (alist-get 'start node))
+                     (end-raw (alist-get 'end node)))
+                 (when type
+                   (let ((type (if (stringp type) (intern type) type)))
+                     (when (and start-raw end-raw)
+                       (let* ((zero (point-min))
+                              (start (+ zero start-raw))
+                              (end (+ zero end-raw)))
+                         (setq
+                          parent-overlay
+                          (js99-make-overlay type depth parent-overlay start end buffer)))))))
                (highlight-children node (+ 1 depth) parent-overlay))
 
               (highlight-all
